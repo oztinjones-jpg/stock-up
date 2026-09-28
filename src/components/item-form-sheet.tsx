@@ -28,6 +28,7 @@ function ItemFormFields({
   initialLocation,
   initialStock,
   showStock,
+  lockLocation,
   removeLabel,
   onRemove,
   onSubmit,
@@ -40,6 +41,7 @@ function ItemFormFields({
   initialLocation: LocationId;
   initialStock: StockLevel;
   showStock: boolean;
+  lockLocation?: boolean;
   removeLabel?: string;
   onRemove?: () => void;
   onSubmit: (input: FormValues) => void;
@@ -76,22 +78,28 @@ function ItemFormFields({
             autoFocus
           />
         </div>
-        <div className="grid gap-2">
-          <span className="text-base font-medium">Where it lives</span>
-          <div className="grid grid-cols-3 gap-2">
-            {LOCATIONS.map((entry) => (
-              <Button
-                key={entry.id}
-                type="button"
-                variant={location === entry.id ? "default" : "outline"}
-                className="h-14 flex-col gap-0.5 whitespace-normal text-sm"
-                onClick={() => setLocation(entry.id)}
-              >
-                {entry.label}
-              </Button>
-            ))}
+        {lockLocation ? (
+          <p className="text-base text-muted-foreground">
+            This goes in the {LOCATIONS.find((entry) => entry.id === location)?.label.toLowerCase()}.
+          </p>
+        ) : (
+          <div className="grid gap-2">
+            <span className="text-base font-medium">Where it lives</span>
+            <div className="grid grid-cols-3 gap-2">
+              {LOCATIONS.map((entry) => (
+                <Button
+                  key={entry.id}
+                  type="button"
+                  variant={location === entry.id ? "default" : "outline"}
+                  className="h-14 flex-col gap-0.5 whitespace-normal text-sm"
+                  onClick={() => setLocation(entry.id)}
+                >
+                  {entry.label}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         {showStock ? (
           <div className="grid gap-2">
             <span className="text-base font-medium">How much is left?</span>
@@ -146,6 +154,7 @@ export function ItemFormSheet({
   initialLocation = "cupboards",
   initialStock = "plenty",
   showStock = true,
+  lockLocation = false,
   removeLabel,
   onRemove,
   onSubmit,
@@ -159,6 +168,7 @@ export function ItemFormSheet({
   initialLocation?: LocationId;
   initialStock?: StockLevel;
   showStock?: boolean;
+  lockLocation?: boolean;
   removeLabel?: string;
   onRemove?: () => void;
   onSubmit: (input: FormValues) => void;
@@ -178,6 +188,7 @@ export function ItemFormSheet({
             initialLocation={initialLocation}
             initialStock={initialStock}
             showStock={showStock}
+            lockLocation={lockLocation}
             removeLabel={removeLabel}
             onRemove={onRemove}
             onSubmit={onSubmit}

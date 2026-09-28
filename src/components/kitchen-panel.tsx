@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PackagePlus, Pencil, Refrigerator, Snowflake, Warehouse } from "lucide-react";
+import { PackagePlus, Pencil, Refrigerator, Snowflake, Trash2, Warehouse } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useHousehold } from "@/lib/household-context";
+import { locationLabel } from "@/lib/labels";
 import { LOCATIONS, STOCK_OPTIONS, type KitchenItem, type LocationId } from "@/lib/types";
 import { ItemFormSheet } from "./item-form-sheet";
 
@@ -29,8 +38,9 @@ function stockTone(stock: KitchenItem["stock"]) {
 
 export function KitchenPanel() {
   const { state, setItemStock, addItem, updateItem, removeItem } = useHousehold();
-  const [adding, setAdding] = useState(false);
+  const [addingLocation, setAddingLocation] = useState<LocationId | null>(null);
   const [editing, setEditing] = useState<KitchenItem | null>(null);
+  const [removing, setRemoving] = useState<KitchenItem | null>(null);
   const [filter, setFilter] = useState<LocationId | "all">("all");
 
   const grouped = useMemo(() => {
@@ -38,24 +48,40 @@ export function KitchenPanel() {
       filter === "all"
         ? state.items
         : state.items.filter((item) => item.location === filter);
-    return LOCATIONS.map((location) => ({
-      ...location,
-      items: visible
-        .filter((item) => item.location === location.id)
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    })).filter((group) => group.items.length > 0 || filter === group.id);
+    return LOCATIONS.filter((location) => filter === "all" || filter === location.id).map(
+      (location) => ({
+        ...location,
+        items: visible
+          .filter((item) => item.location === location.id)
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      }),
+    );
   }, [filter, state.items]);
 
   const sheets = (
     <>
       <ItemFormSheet
-        open={adding}
-        onOpenChange={setAdding}
-        title="Add a food"
-        description="Name it, pick a place, say how much is left."
-        confirmLabel="Add to kitchen"
-        onSubmit={addItem}
+        key={addingLocation ?? "add"}
+        open={addingLocation !== null}
+        onOpenChange={(open) => {
+          if (!open) setAddingLocation(null);
+        }}
+        title={
+          addingLocation
+            ? `Add food to the ${locationLabel(addingLocation).toLowerCase()}`
+            : "Add a food"
+        }
+        description="Name it and say how much is left. Kids can do this too."
+        confirmLabel="Add this food"
+        initialLocation={addingLocation ?? "cupboards"}
+        lockLocation={addingLocation !== null}
+        onSubmit={(input) => {
+          addItem({
+            ...input,
+            location: addingLocation ?? input.location,
+          });
+        }}
       />
       {editing ? (
         <ItemFormSheet
@@ -70,7 +96,7 @@ export function KitchenPanel() {
           initialName={editing.name}
           initialLocation={editing.location}
           initialStock={editing.stock}
-          removeLabel="Remove from kitchen"
+          removeLabel={`Remove from ${locationLabel(editing.location).toLowerCase()}`}
           onRemove={() => {
             removeItem(editing.id);
             setEditing(null);
@@ -81,38 +107,59 @@ export function KitchenPanel() {
           }}
         />
       ) : null}
+      <Sheet
+        open={removing !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+      >
+        <SheetContent
+          side="bottom"
+          className="gap-0 rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
+          {removing ? (
+            <>
+              <SheetHeader>
+                <SheetTitle className="text-xl">Remove {removing.name}?</SheetTitle>
+                <SheetDescription className="text-base">
+                  This takes it out of the{" "}
+                  {locationLabel(removing.location).toLowerCase()} and off this
+                  week&apos;s shop. You can add it again later.
+                </SheetDescription>
+              </SheetHeader>
+              <SheetFooter>
+                <Button
+                  className="h-12 w-full text-base"
+                  variant="destructive"
+                  onClick={() => {
+                    removeItem(removing.id);
+                    setRemoving(null);
+                  }}
+                >
+                  Yes, remove it
+                </Button>
+                <Button
+                  className="h-12 w-full text-base"
+                  variant="outline"
+                  onClick={() => setRemoving(null)}
+                >
+                  Keep it
+                </Button>
+              </SheetFooter>
+            </>
+          ) : null}
+        </SheetContent>
+      </Sheet>
     </>
   );
-
-  if (state.items.length === 0) {
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Kitchen is empty</CardTitle>
-            <CardDescription className="text-base">
-              Add the foods you keep at home. Start with pasta, milk, or
-              whatever you cook with most weeks.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="h-12 w-full text-base" onClick={() => setAdding(true)}>
-              <PackagePlus />
-              Add first food
-            </Button>
-          </CardContent>
-        </Card>
-        {sheets}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Kitchen stock</h2>
         <p className="mt-1 text-base text-muted-foreground">
-          Tap how much is left. Low and Out go on this week&apos;s shop.
+          Add or remove food in each place. Tap Plenty, Low, or Out. Low and Out
+          go on this week&apos;s shop.
         </p>
       </div>
 
@@ -136,50 +183,39 @@ export function KitchenPanel() {
         ))}
       </div>
 
-      {grouped.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Nothing in this place</CardTitle>
-            <CardDescription className="text-base">
-              Add food here, or pick another cupboard, fridge, or freezer view.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        grouped.map((group) => {
-          const Icon = ICONS[group.id];
-          return (
-            <section key={group.id} className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Icon className="size-5 shrink-0" />
-                <div>
-                  <h3 className="text-lg font-medium leading-tight">{group.label}</h3>
-                  <p className="text-sm text-muted-foreground">{group.hint}</p>
-                </div>
+      {grouped.map((group) => {
+        const Icon = ICONS[group.id];
+        return (
+          <section key={group.id} className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Icon className="size-5 shrink-0" />
+              <div>
+                <h3 className="text-lg font-medium leading-tight">{group.label}</h3>
+                <p className="text-sm text-muted-foreground">{group.hint}</p>
               </div>
+            </div>
+            {group.items.length === 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Nothing in the {group.label.toLowerCase()} yet</CardTitle>
+                  <CardDescription className="text-base">
+                    Add the foods you keep here.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ) : (
               <div className="grid gap-3">
                 {group.items.map((item) => (
                   <Card key={item.id} className="py-4">
                     <CardContent className="flex flex-col gap-3 px-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-medium leading-tight">{item.name}</p>
-                          <Badge className={`mt-2 border-0 ${stockTone(item.stock)}`}>
-                            {
-                              STOCK_OPTIONS.find((option) => option.id === item.stock)
-                                ?.kidLabel
-                            }
-                          </Badge>
-                        </div>
-                        <Button
-                          variant="outline"
-                          className="h-12 min-w-12"
-                          onClick={() => setEditing(item)}
-                          aria-label={`Edit ${item.name}`}
-                        >
-                          <Pencil />
-                          Edit
-                        </Button>
+                      <div>
+                        <p className="text-lg font-medium leading-tight">{item.name}</p>
+                        <Badge className={`mt-2 border-0 ${stockTone(item.stock)}`}>
+                          {
+                            STOCK_OPTIONS.find((option) => option.id === item.stock)
+                              ?.kidLabel
+                          }
+                        </Badge>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {STOCK_OPTIONS.map((option) => (
@@ -194,19 +230,40 @@ export function KitchenPanel() {
                           </Button>
                         ))}
                       </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          className="h-12"
+                          onClick={() => setEditing(item)}
+                        >
+                          <Pencil />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="h-12"
+                          onClick={() => setRemoving(item)}
+                        >
+                          <Trash2 />
+                          Remove
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </section>
-          );
-        })
-      )}
-
-      <Button className="h-12 w-full text-base" onClick={() => setAdding(true)}>
-        <PackagePlus />
-        Add food
-      </Button>
+            )}
+            <Button
+              variant="outline"
+              className="h-12 w-full text-base"
+              onClick={() => setAddingLocation(group.id)}
+            >
+              <PackagePlus />
+              Add to {group.label.toLowerCase()}
+            </Button>
+          </section>
+        );
+      })}
       {sheets}
     </div>
   );
