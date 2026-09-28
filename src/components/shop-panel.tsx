@@ -159,11 +159,14 @@ export function ShopPanel() {
         Add something else
       </Button>
 
-      <div className="sticky bottom-24 z-20 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur">
-        <Button className="h-14 w-full text-base" onClick={() => finishShop()}>
-          <ShoppingBag />
-          Finish shop and save
-        </Button>
+      <div className="h-20" aria-hidden />
+      <div className="pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-30 px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-auto mx-auto max-w-lg">
+          <Button className="h-14 w-full text-base shadow-lg" onClick={() => finishShop()}>
+            <ShoppingBag />
+            Finish shop and save
+          </Button>
+        </div>
       </div>
 
       <ItemFormSheet

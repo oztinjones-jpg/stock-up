@@ -51,17 +51,17 @@ export function AppShell() {
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-background">
       <header className="sticky top-0 z-30 border-b bg-background/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
         <p className="text-sm font-medium text-muted-foreground">Household kitchen</p>
-        <h1 className="text-xl font-semibold tracking-tight">Who is using this?</h1>
-        <div className="mt-3 grid grid-cols-2 gap-2">
+        <h1 className="text-lg font-semibold tracking-tight">Who is using this?</h1>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
           {MEMBERS.map((member) => (
             <Button
               key={member.id}
               variant={state.currentMemberId === member.id ? "default" : "outline"}
-              className="h-14 flex-col gap-0.5"
+              className="h-12 min-w-[5.5rem] shrink-0 flex-col gap-0 px-3"
               onClick={() => setCurrentMember(member.id)}
             >
-              <span className="text-base font-semibold">{member.name}</span>
-              <span className="text-xs font-normal opacity-80">
+              <span className="text-sm font-semibold">{member.name}</span>
+              <span className="text-[11px] font-normal opacity-80">
                 {member.kind === "kid" ? "Kid" : "Grown-up"}
               </span>
             </Button>
@@ -69,7 +69,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 pb-28">
+      <main className={`flex-1 px-4 py-4 ${tab === "shop" ? "pb-44" : "pb-28"}`}>
         {tab === "kitchen" ? <KitchenPanel /> : null}
         {tab === "shop" ? <ShopPanel /> : null}
         {tab === "history" ? <HistoryPanel /> : null}
