@@ -23,7 +23,7 @@ import {
   type StockLevel,
 } from "./types";
 
-type Status = "loading" | "ready" | "error";
+type Status = "ready" | "error";
 
 interface HouseholdContextValue {
   status: Status;
@@ -88,9 +88,10 @@ function syncListForStock(
 }
 
 export function HouseholdProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<Status>("loading");
+  const [status, setStatus] = useState<Status>("ready");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [state, setState] = useState<AppState>(createSeedState);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -107,16 +108,17 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
       );
       setStatus("error");
     }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (status !== "ready") return;
+    if (!hydrated || status !== "ready") return;
     try {
       saveState(state);
     } catch {
       toast.error("Could not save. Check that this browser allows storage.");
     }
-  }, [state, status]);
+  }, [state, status, hydrated]);
 
   const update = useCallback((updater: (current: AppState) => AppState) => {
     setState((current) => updater(current));

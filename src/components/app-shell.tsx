@@ -18,14 +18,6 @@ export function AppShell() {
   const [tab, setTab] = useState<Tab>("kitchen");
   const shopCount = state.currentList.length;
 
-  if (status === "loading") {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-4">
-        <p className="text-lg text-muted-foreground">Opening the kitchen…</p>
-      </div>
-    );
-  }
-
   if (status === "error") {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4">
