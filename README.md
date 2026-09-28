@@ -4,7 +4,7 @@ A shared kitchen stock and weekly shopping list for one household. Track food in
 
 Built phone-first so kids and grown-ups can tap large buttons with a thumb. Desktop still works; it is not the main layout.
 
-No accounts or database. One install, four mock household members (Austin, Maya, Leo, Nina). Data stays in this browser.
+No accounts or database. One install, four mock household members (Austin, Monica, Alex, Lara). Data stays in this browser.
 
 ## Run locally
 

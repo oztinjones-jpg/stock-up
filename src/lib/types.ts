@@ -60,9 +60,9 @@ export const LOCATIONS: { id: LocationId; label: string; hint: string }[] = [
 
 export const MEMBERS: HouseholdMember[] = [
   { id: "austin", name: "Austin", kind: "adult" },
-  { id: "maya", name: "Maya", kind: "adult" },
-  { id: "leo", name: "Leo", kind: "kid" },
-  { id: "nina", name: "Nina", kind: "kid" },
+  { id: "monica", name: "Monica", kind: "adult" },
+  { id: "alex", name: "Alex", kind: "kid" },
+  { id: "lara", name: "Lara", kind: "kid" },
 ];
 
 export const STOCK_OPTIONS: {

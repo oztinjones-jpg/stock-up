@@ -68,7 +68,7 @@ export function createSeedState(): AppState {
       {
         id: "shop-last-sunday",
         finishedAt: "2026-09-21T16:40:00.000Z",
-        finishedById: "maya",
+        finishedById: "monica",
         lines: [
           {
             name: "Milk",

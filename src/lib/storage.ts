@@ -4,6 +4,16 @@ import { MEMBERS } from "./types";
 
 export const STORAGE_KEY = "kitchen-stock-v1";
 
+const MEMBER_ID_ALIASES: Record<string, string> = {
+  maya: "monica",
+  leo: "alex",
+  nina: "lara",
+};
+
+function remapMemberId(id: string) {
+  return MEMBER_ID_ALIASES[id] ?? id;
+}
+
 export function isAppState(value: unknown): value is AppState {
   if (!value || typeof value !== "object") return false;
   const state = value as AppState;
@@ -28,6 +38,11 @@ export function loadState(): AppState {
   if (!isAppState(parsed)) {
     throw new Error("Saved kitchen data looks wrong.");
   }
+  parsed.currentMemberId = remapMemberId(parsed.currentMemberId);
+  parsed.history = parsed.history.map((shop) => ({
+    ...shop,
+    finishedById: remapMemberId(shop.finishedById),
+  }));
   if (!MEMBERS.some((member) => member.id === parsed.currentMemberId)) {
     parsed.currentMemberId = MEMBERS[0].id;
   }
