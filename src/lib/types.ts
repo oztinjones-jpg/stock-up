@@ -44,12 +44,15 @@ export interface ShopRecord {
   lines: ShopLineRecord[];
 }
 
-export interface AppState {
+export interface SharedKitchen {
   version: 1;
-  currentMemberId: string;
   items: KitchenItem[];
   currentList: ListLine[];
   history: ShopRecord[];
+}
+
+export interface AppState extends SharedKitchen {
+  currentMemberId: string;
 }
 
 export const LOCATIONS: { id: LocationId; label: string; hint: string }[] = [

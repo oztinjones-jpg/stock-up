@@ -6,12 +6,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
+import { fetchKitchen, saveKitchen } from "./kitchen-api";
+import { toSharedKitchen, withMember } from "./kitchen-shape";
 import { newId } from "./labels";
 import { createSeedState, listLineForItem } from "./seed";
-import { clearState, loadState, saveState } from "./storage";
+import { loadMemberId, saveMemberId } from "./storage";
 import {
   MEMBERS,
   type AppState,
@@ -57,10 +60,7 @@ function reasonFromStock(stock: StockLevel): ListLine["reason"] {
   return "needed";
 }
 
-function syncListForStock(
-  list: ListLine[],
-  item: KitchenItem,
-): ListLine[] {
+function syncListForStock(list: ListLine[], item: KitchenItem): ListLine[] {
   const existing = list.find((line) => line.itemId === item.id);
   if (item.stock === "plenty") {
     if (!existing) return list;
@@ -92,44 +92,82 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [state, setState] = useState<AppState>(createSeedState);
   const [hydrated, setHydrated] = useState(false);
+  const skipSave = useRef(true);
+  const memberId = useRef(MEMBERS[0].id);
 
   useEffect(() => {
-    try {
-      const loaded = loadState();
-      // localStorage is an external store; hydrate after mount.
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage hydrate
-      setState(loaded);
-      setStatus("ready");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "We could not open the kitchen list.",
-      );
-      setStatus("error");
-    }
-    setHydrated(true);
+    memberId.current = loadMemberId();
+    saveMemberId(memberId.current);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const kitchen = await fetchKitchen();
+        if (cancelled) return;
+        skipSave.current = true;
+        setState(withMember(kitchen, memberId.current));
+        setStatus("ready");
+        setErrorMessage(null);
+      } catch (error) {
+        if (cancelled) return;
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "We could not open the shared kitchen.",
+        );
+        setStatus("error");
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!hydrated || status !== "ready") return;
-    try {
-      saveState(state);
-    } catch {
-      toast.error("Could not save. Check that this browser allows storage.");
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
     }
+    void saveKitchen(toSharedKitchen(state)).catch(() => {
+      toast.error("Could not save the shared kitchen.");
+    });
   }, [state, status, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || status !== "ready") return;
+    const timer = window.setInterval(() => {
+      void (async () => {
+        try {
+          const kitchen = await fetchKitchen();
+          setState((current) => {
+            if (
+              JSON.stringify(toSharedKitchen(current)) === JSON.stringify(kitchen)
+            ) {
+              return current;
+            }
+            skipSave.current = true;
+            return withMember(kitchen, current.currentMemberId);
+          });
+        } catch {
+          // keep the last good kitchen if the network blips
+        }
+      })();
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [hydrated, status]);
 
   const update = useCallback((updater: (current: AppState) => AppState) => {
     setState((current) => updater(current));
   }, []);
 
-  const setCurrentMember = useCallback(
-    (id: string) => {
-      update((current) => ({ ...current, currentMemberId: id }));
-    },
-    [update],
-  );
+  const setCurrentMember = useCallback((id: string) => {
+    memberId.current = id;
+    saveMemberId(id);
+    skipSave.current = true;
+    update((current) => ({ ...current, currentMemberId: id }));
+  }, [update]);
 
   const setItemStock = useCallback(
     (itemId: string, stock: StockLevel) => {
@@ -198,7 +236,9 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
           ),
           currentList: syncListForStock(
             current.currentList.map((line) =>
-              line.itemId === itemId ? { ...line, name, location: input.location } : line,
+              line.itemId === itemId
+                ? { ...line, name, location: input.location }
+                : line,
             ),
             nextItem,
           ),
@@ -330,12 +370,12 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   }, [state]);
 
   const restoreDemo = useCallback(() => {
-    clearState();
-    const demo = createSeedState();
+    const demo = withMember(toSharedKitchen(createSeedState()), memberId.current);
+    skipSave.current = false;
     setState(demo);
     setErrorMessage(null);
     setStatus("ready");
-    toast.success("Sample kitchen restored.");
+    toast.success("Sample kitchen restored for everyone.");
   }, []);
 
   const currentMemberName =
@@ -378,9 +418,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <HouseholdContext.Provider value={value}>
-      {children}
-    </HouseholdContext.Provider>
+    <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>
   );
 }
 

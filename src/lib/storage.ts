@@ -1,58 +1,32 @@
-import { createSeedState } from "./seed";
-import type { AppState } from "./types";
 import { MEMBERS } from "./types";
+import { remapMemberId } from "./kitchen-shape";
 
-export const STORAGE_KEY = "kitchen-stock-v1";
+export const MEMBER_KEY = "kitchen-member-v1";
+export const LEGACY_STATE_KEY = "kitchen-stock-v1";
 
-const MEMBER_ID_ALIASES: Record<string, string> = {
-  maya: "monica",
-  leo: "alex",
-  nina: "lara",
-};
-
-function remapMemberId(id: string) {
-  return MEMBER_ID_ALIASES[id] ?? id;
+export function loadMemberId(): string {
+  if (typeof window === "undefined") return MEMBERS[0].id;
+  const stored = window.localStorage.getItem(MEMBER_KEY);
+  if (stored) return remapMemberId(stored);
+  try {
+    const legacy = window.localStorage.getItem(LEGACY_STATE_KEY);
+    if (legacy) {
+      const parsed: unknown = JSON.parse(legacy);
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "currentMemberId" in parsed &&
+        typeof parsed.currentMemberId === "string"
+      ) {
+        return remapMemberId(parsed.currentMemberId);
+      }
+    }
+  } catch {
+    // ignore broken leftover data
+  }
+  return MEMBERS[0].id;
 }
 
-export function isAppState(value: unknown): value is AppState {
-  if (!value || typeof value !== "object") return false;
-  const state = value as AppState;
-  return (
-    state.version === 1 &&
-    typeof state.currentMemberId === "string" &&
-    Array.isArray(state.items) &&
-    Array.isArray(state.currentList) &&
-    Array.isArray(state.history)
-  );
-}
-
-export function loadState(): AppState {
-  if (typeof window === "undefined") {
-    return createSeedState();
-  }
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return createSeedState();
-  }
-  const parsed: unknown = JSON.parse(raw);
-  if (!isAppState(parsed)) {
-    throw new Error("Saved kitchen data looks wrong.");
-  }
-  parsed.currentMemberId = remapMemberId(parsed.currentMemberId);
-  parsed.history = parsed.history.map((shop) => ({
-    ...shop,
-    finishedById: remapMemberId(shop.finishedById),
-  }));
-  if (!MEMBERS.some((member) => member.id === parsed.currentMemberId)) {
-    parsed.currentMemberId = MEMBERS[0].id;
-  }
-  return parsed;
-}
-
-export function saveState(state: AppState) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-export function clearState() {
-  window.localStorage.removeItem(STORAGE_KEY);
+export function saveMemberId(id: string) {
+  window.localStorage.setItem(MEMBER_KEY, remapMemberId(id));
 }
