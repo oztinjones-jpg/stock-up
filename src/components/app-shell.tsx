@@ -49,13 +49,10 @@ export function AppShell() {
             <Button
               key={member.id}
               variant={state.currentMemberId === member.id ? "default" : "outline"}
-              className="h-12 min-w-[5.5rem] shrink-0 flex-col gap-0 px-3"
+              className="h-12 min-w-[5.5rem] shrink-0 px-3 text-base font-semibold"
               onClick={() => setCurrentMember(member.id)}
             >
-              <span className="text-sm font-semibold">{member.name}</span>
-              <span className="text-[11px] font-normal opacity-80">
-                {member.kind === "kid" ? "Kid" : "Grown-up"}
-              </span>
+              {member.name}
             </Button>
           ))}
         </div>
