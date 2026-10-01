@@ -194,6 +194,14 @@ export function KitchenPanel() {
                 <p className="text-sm text-muted-foreground">{group.hint}</p>
               </div>
             </div>
+            <Button
+              variant="outline"
+              className="h-12 w-full text-base"
+              onClick={() => setAddingLocation(group.id)}
+            >
+              <PackagePlus />
+              Add to {group.label.toLowerCase()}
+            </Button>
             {group.items.length === 0 ? (
               <Card>
                 <CardHeader>
@@ -253,14 +261,6 @@ export function KitchenPanel() {
                 ))}
               </div>
             )}
-            <Button
-              variant="outline"
-              className="h-12 w-full text-base"
-              onClick={() => setAddingLocation(group.id)}
-            >
-              <PackagePlus />
-              Add to {group.label.toLowerCase()}
-            </Button>
           </section>
         );
       })}
