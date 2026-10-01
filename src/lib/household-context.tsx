@@ -375,7 +375,7 @@ export function HouseholdProvider({ children }: { children: React.ReactNode }) {
     setState(demo);
     setErrorMessage(null);
     setStatus("ready");
-    toast.success("Sample kitchen restored for everyone.");
+    toast.success("Kitchen cleared for everyone.");
   }, []);
 
   const currentMemberName =

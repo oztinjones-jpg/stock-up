@@ -26,12 +26,12 @@ export function AppShell() {
             <CardTitle className="text-xl">Could not load the kitchen</CardTitle>
             <CardDescription className="text-base">
               {errorMessage ??
-                "Saved data on this phone looks broken. You can start again with the sample kitchen."}
+                "Saved data on this phone looks broken. You can start again with an empty kitchen."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button className="h-12 w-full text-base" onClick={restoreDemo}>
-              Restore sample kitchen
+              Start with an empty kitchen
             </Button>
           </CardContent>
         </Card>
