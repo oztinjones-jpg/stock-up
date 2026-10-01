@@ -42,7 +42,7 @@ export function AppShell() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-background">
       <header className="sticky top-0 z-30 border-b bg-background/95 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur">
-        <p className="text-sm font-medium text-muted-foreground">Household kitchen</p>
+        <p className="text-sm font-medium text-muted-foreground">Shopping List: 18 Camberton Rd</p>
         <h1 className="text-lg font-semibold tracking-tight">Who is using this?</h1>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
           {MEMBERS.map((member) => (

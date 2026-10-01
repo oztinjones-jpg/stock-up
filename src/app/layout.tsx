@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Household kitchen",
+  title: "Shopping List: 18 Camberton Rd",
   description:
     "Track cupboard, fridge, and freezer stock, then share a weekly shopping list for the whole household.",
 };
